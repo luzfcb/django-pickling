@@ -1,0 +1,87 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.tox-env }}
+    runs-on: ${{ startsWith(matrix.tox-env, 'py39') && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        tox-env:
+          - py39-dj22
+          - py39-dj31
+          - py39-dj32
+          - py39-dj40
+          - py39-dj41
+          - py39-dj42
+          - py310-dj32
+          - py310-dj40
+          - py310-dj41
+          - py310-dj42
+          - py310-dj50
+          - py310-dj51
+          - py310-dj52
+          - py311-dj41
+          - py311-dj42
+          - py311-dj50
+          - py311-dj51
+          - py311-dj52
+          - py312-dj42
+          - py312-dj50
+          - py312-dj51
+          - py312-dj52
+          - py312-dj60
+          - py313-dj51
+          - py313-dj52
+          - py313-dj60
+          - py314-dj52
+          - py314-dj60
+
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            tox.ini
+            test_requirements.txt
+            setup.py
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: |
+            ${{ startsWith(matrix.tox-env, 'py39') && '3.9' ||
+                startsWith(matrix.tox-env, 'py310') && '3.10' ||
+                startsWith(matrix.tox-env, 'py311') && '3.11' ||
+                startsWith(matrix.tox-env, 'py312') && '3.12' ||
+                startsWith(matrix.tox-env, 'py313') && '3.13' ||
+                '3.14' }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [[ "${{ matrix.tox-env }}" == py39* ]]; then
+            pip install tox
+          else
+            pip install tox tox-uv-bare
+          fi
+
+      - name: Run tox
+        run: tox -e ${{ matrix.tox-env }}
