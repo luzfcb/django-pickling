@@ -6,3 +6,7 @@ build
 .tox
 .benchmarks
 sqlite.db
+.coverage
+.venv/
+htmlcov/
+

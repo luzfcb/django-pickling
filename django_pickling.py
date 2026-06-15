@@ -57,7 +57,9 @@ def Model__reduce__(self):
         return original_Model__reduce__(self)
 
 
-if Model.__reduce__ != Model__reduce__:
+if Model.__reduce__.__name__ != 'Model__reduce__':
     original_Model__reduce__ = Model.__reduce__
     Model.__reduce__ = Model__reduce__
-    del Model.__setstate__  # Drop django version check
+    if hasattr(Model, '__setstate__'):
+        del Model.__setstate__  # Drop django version check
+
